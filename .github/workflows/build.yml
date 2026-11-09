@@ -1,0 +1,24 @@
+name: Build IPA
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - run: |
+          xcodebuild -project SpicyStudio.xcodeproj -scheme SpicyStudio \
+            -sdk iphoneos -configuration Release \
+            -archivePath build/App.xcarchive archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - run: |
+          mkdir -p build/Payload
+          cp -R build/App.xcarchive/Products/Applications/SpicyStudio.app build/Payload/
+          cd build && zip -r SpicyStudio.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SpicyStudio-ipa
+          path: build/SpicyStudio.ipa
